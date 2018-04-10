@@ -4,7 +4,6 @@
  * Module dependencies.
  */
 
-console.log("www 1");
 //cluster
 var cluster = require('cluster');
 var numCPUs = require('os').cpus().length;
@@ -12,13 +11,13 @@ var numCPUs = require('os').cpus().length;
 var app = require('../app');
 var debug = require('debug')('abuba:server');
 var http = require('http');
-console.log("www 2");
+
 //log
 var log4js = require('log4js');
 log4js.configure('./configure/log4js.json');
 var operation_log = log4js.getLogger("operation");
 var error_log = log4js.getLogger("error");
-console.log("www 3");
+
 
 /**
  * Get port from environment and store in Express.
@@ -30,9 +29,9 @@ app.set('port', port);
 /**
  * Create HTTP server.
  */
-console.log("www 4");
+
 var server = http.createServer(app);
-console.log("www 5");
+
 
 /**
  * Listen on provided port, on all network interfaces.
