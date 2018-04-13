@@ -7,15 +7,14 @@ var bodyParser = require('body-parser');
 var session = require('express-session');
 var Promise = require('promise');
 
-console.log("app 1");
 //----------------------------------------------------------------//
 
-var kafka = require('./routes/kafka');
+var index = require('./routes/index');
 
 //----------------------------------------------------------------//
 
 var app = express();
-console.log("app 2");
+
 //----------------------------------------------------------------//
 
 // view engine setup
@@ -28,8 +27,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 //----------------------------------------------------------------//
-console.log("app 3");
-app.use('/kafka', kafka);
+
+app.use('/', index);
 
 //----------------------------------------------------------------//
 
@@ -40,7 +39,7 @@ app.use(function(req, res, next) {
   next(err);
 });
 
-console.log("app 4");
+
 //----------------------------------------------------------------//
 
 // error handlers
@@ -56,7 +55,7 @@ if (app.get('env') === 'development') {
     });
   });
 }
-console.log("app 5");
+
 // production error handler
 // no stacktraces leaked to user
 app.use(function(err, req, res, next) {
@@ -66,7 +65,7 @@ app.use(function(err, req, res, next) {
     error: {}
   });
 });
-console.log("app 6");
+
 //----------------------------------------------------------------//
 
 module.exports = app;
