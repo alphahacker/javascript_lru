@@ -8,6 +8,7 @@ redisClient.connectClients = function (redisIp) {
   // redisClient.socialMemory = redis.createClient(1236, redisIp);     //각 사용자에게 할당된 메모리양이 저장되는 곳
   // redisClient.locationMemory = redis.createClient(1237, redisIp);   //사용자의 위치가 저장되어있는 곳
   redisClient.friendListMemory = redis.createClient(1238, '127.0.0.1');   //사용자의 친구들 리스트가 저장되어있는 곳
+  console.log("redis client created");
 }
 
 redisClient.flushMemory = function () {

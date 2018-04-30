@@ -7,7 +7,16 @@ var lru = function (limit) {
     this.map = {};
     this.head = null;
     this.tail = null;
+    this.priorityValue = 0;
 }
+
+// var lru = function (limit) {
+//     this.size = 0;
+//     (typeof limit == "number") ? this.limit = limit : this.limit = 10;
+//     this.map = {};
+//     this.head = null;
+//     this.tail = null;
+// }
 
 lru.prototype.lrunode = function(key, value) {
     if (typeof key != "undefined" && key !== null) {
@@ -125,6 +134,7 @@ lru.prototype.toJSON = function() {
 lru.prototype.toString = function() {
     var s = '';
     var node = this.head;
+    console.log(node);
     while (node) {
         s += String(node.key)+':'+node.value;
         node = node.next;
@@ -137,77 +147,141 @@ lru.prototype.toString = function() {
 
 //----------------------------------------------------------------------------//
 
-//데이터를 저장할 node 생성 - completed
-//lru node가 priority value 를 가지고 있도록 변경
-lru.prototype.urbNode = function(key, value, user_1, user_2) {
-
-    //여기서 this의 의미가 해당 노드를 의미하는게 맞는지 check 필요
-    this.priorityValue = this.getPriorityValue(user_1, user_2);
-
-    if (typeof key != "undefined" && key !== null) {
-        this.key = key;
-    }
-    if (typeof value != "undefined" && value !== null) {
-        this.value = value;
-    }
-
-    this.prev = null;
-    this.next = null;
-}
-
-
-//SetHead의 역할을 하는 곳, 이 알고리즘에서는 무조건 Head에 넣는것이 아니라,
-//Priority value 값에 따라 적정 위치에 들어간다.
-//즉, Read/Write 할때 그 대상이 되는 데이터의 리스트 위치를 잡아준다.
-//그러니까 원래 LRU에서 setHead가 호출되는 부분에, 이게 호출 되야함. - completed
-lru.prototype.setInList = function(currNode) {
-  var isCompleted = false; //노드를 리스트에 넣는것을 완성했는지 여부.
-
-  //이미 노드가 만들어지면서 정렬이 되기때문에,
-  //head에서부터 뒤로 차례대로 PriorityValue 값 비교하면서, 자기보다 큰 값 나오면 그 앞에다가 넣는다.
-  var existingNode = this.head;
-  while (existingNode) {
-      existingNode = existingNode.next;
-      if(existingNode.priorityValue > currNode.priorityValue){
-        //여기다가 노드 넣기 *******************
-        existingNode.prev.next = currNode;
-        currNode.next = existingNode;
-
-        existingNode.prev = currNode;
-        currNode.prev = existingNode.prev;
-
-        //여기에서 노드 넣기 true처리 *******************
-        isCompleted = true;
-      }
-  }
-
-  if(!isCompleted){ //아직 못넣었으면, tail에다가 넣어야함.
-    this.tail.next = currNode;
-    currNode.prev = this.tail;
-
-    this.tail = currNode;
-  }
-}
-
 //set data - completed
 lru.prototype.setData = function(key, value, user_1, user_2){
-  var node = new lru.prototype.urbNode(key, value, user_1, user_2);
-  if (this.map[key]) {
-      this.map[key].value = node.value;
-      this.remove(node.key);
-  } else {
-      if (this.size >= this.limit) {
-          delete this.map[this.tail.key];
-          this.size--;
-          this.tail = this.tail.prev;
-          this.tail.next = null;
+
+  var lruInstance = this;
+  var promise = new Promise(function(resolved, rejected){
+      getPriorityValue(user_1, user_2, function(retPriorityValue){
+        console.log("RET PRIORITY VALUE : " + retPriorityValue);
+        var node = new lru.prototype.urbNode(key, value, retPriorityValue);
+        resolved(node);
+      });
+
+  });
+
+  promise
+  .then(function(node){
+    return new Promise(function(resolved, rejected){
+      // console.log("LRU INSTANCE : ");
+      // console.log(lruInstance);
+
+      if (lruInstance.map[key]) {
+          lruInstance.map[key].value = lruInstance.value;
+          lruInstance.remove(node.key);
+      } else {
+          if (lruInstance.size >= lruInstance.limit) {
+              delete lruInstance.map[lruInstance.tail.key];
+              lruInstance.size--;
+              lruInstance.tail = lruInstance.tail.prev;
+              lruInstance.tail.next = null;
+          }
       }
-  }
-  this.setInList(node);
+      resolved(node);
+    })
+  }, function(err){
+      console.log(err);
+  })
+  .then(function(node){
+    return new Promise(function(resolved, rejected){
+      lruInstance.setInList(node);
+      //lru.prototype.setInList(node);
+      resolved();
+    })
+  }, function(err){
+      console.log(err);
+  })
 }
 
+lru.prototype.urbNode = function(key, value, paramPriorityValue) {
+
+    var nodeInstance = this;
+    var promise = new Promise(function(resolved, rejected){
+        nodeInstance.priorityValue = paramPriorityValue;
+        resolved();
+    });
+
+    promise
+    .then(function(){
+      return new Promise(function(resolved, rejected){
+        if (typeof key != "undefined" && key !== null) {
+            nodeInstance.key = key;
+        }
+        if (typeof value != "undefined" && value !== null) {
+            nodeInstance.value = value;
+        }
+        resolved();
+      })
+    }, function(err){
+        console.log(err);
+    })
+    .then(function(){
+      return new Promise(function(resolved, rejected){
+        nodeInstance.prev = null;
+        nodeInstance.next = null;
+        resolved();
+      })
+    }, function(err){
+        console.log(err);
+    })
+}
+
+lru.prototype.setInList = function(currNode) {
+
+  var isCompleted = false; //노드를 리스트에 넣는것을 완성했는지 여부.
+
+  if(this.head == null){
+    this.head = currNode;
+
+  } else {
+    var existingNode = this.head;
+    while (existingNode) {
+      if(existingNode.priorityValue > currNode.priorityValue){
+        if(existingNode.prev == null){  // 기존에 있던게, head면
+          currNode.prev = null;
+          existingNode.prev = currNode;
+          currNode.next = existingNode;
+        } else {
+          existingNode.prev.next = currNode;
+          currNode.next = existingNode;
+
+          currNode.prev = existingNode.prev;
+          existingNode.prev = currNode;
+        }
+        isCompleted = true;
+      }
+      existingNode = existingNode.next;
+    }
+
+    if(!isCompleted){ //아직 못넣었으면, tail에다가 넣어야함.
+      if(this.tail == null){
+        currNode.prev = this.tail;
+        this.tail = currNode;
+
+      } else {
+        this.tail.next = currNode;
+        currNode.prev = this.tail;
+        this.tail = currNode;
+      }
+    }
+  }
+
+  if(this.tail == null){
+    this.tail = currNode;
+  }
+
+  this.size++;
+  this.map[currNode.key] = currNode;
+
+  console.log("What's this : ");
+  console.log(this);
+
+}
+
+
+
 //Closeness value + LRU value의 합인 Priority value 구하기 - completed
-lru.prototype.getPriorityValue = function(user_1, user_2) {
+var getPriorityValue = function(user_1, user_2, cb) {
 
   var cvValue;
   var lruValue;
@@ -216,22 +290,28 @@ lru.prototype.getPriorityValue = function(user_1, user_2) {
       // if(err){
       //   rejected();
       // }
-      cvValue = this.getCV(user_1, user_2);
-      resolved();
+      //cvValue = getCV(user_1, user_2);
+      getCV(user_1, user_2, function(retCV){
+        cvValue = retCV;
+        console.log("CV Value : " + cvValue);
+        resolved();
+      })
   });
 
   promise
-  .then(function(contentIndexList){
+  .then(function(){
     return new Promise(function(resolved, rejected){
-      lruValue = this.getLRU();
+      lruValue = getLRU();
+      console.log("LRU Value : " + lruValue);
       resolved();
     })
   }, function(err){
       console.log(err);
   })
-  .then(function(contentIndexList){
+  .then(function(){
     return new Promise(function(resolved, rejected){
-      return parseInt(cvValue) + parseInt(lruValue);  //이 return 제대로 되는지 확인 필요
+      //return parseInt(cvValue) + parseInt(lruValue);  //이 return 제대로 되는지 확인 필요
+      cb(parseInt(cvValue) + parseInt(lruValue));
       resolved();
     })
   }, function(err){
@@ -240,50 +320,56 @@ lru.prototype.getPriorityValue = function(user_1, user_2) {
 }
 
 //Closeness value 값 가져오기 - completed
-lru.prototype.getCV = function(user_1, user_2) {
+var getCV = function(user_1, user_2, cb) {
 
   var isFriend = false;
   var cvValue = 1;
+  var friendList = [];
 
   //user_1의 친구리스트에 user_2가 있는지 확인
   var promise = new Promise(function(resolved, rejected){
-  var key = user_1;
-  redisPool.friendListMemory.get(key, function (err, result) {
-      if(err){
-        error_log.info("fail to get the friendList memory in Redis : " + err);
-        error_log.info("key (req.params.userId) : " + key);
-        error_log.info();
-        rejected("fail to get the friendList memory in Redis");
-      }
-      else if(result == undefined || result == null){
-        resolved();
-      }
-      else {
-        isFriend = true;
-        resolved();
-      }
-    });
+    var key = user_1;
+    redisPool.friendListMemory.lrange(key, 0, -1, function (err, result) {
+        if(err){
+          console.log("redis err : " + err);
+          rejected("fail to get the friendList memory in Redis");
+        }
+        else {
+          friendList = result;
+
+          for(var i=0; i<friendList.length; i++){
+             if(user_2 == friendList[i]){
+               isFriend = true;
+               resolved();
+             }
+          }
+          resolved();
+        }
+
+      });
   });
 
   //user_2의 친구리스트에 user_1이 있는지 확인
   promise
-  .then(function(contentIndexList){
+  .then(function(){
     return new Promise(function(resolved, rejected){
       if(isFriend == true)  resolved();
       else {
-        key = user_2;
-        redisPool.friendListMemory.get(key, function (err, result) {
+        var key = user_2;
+        redisPool.friendListMemory.lrange(key, 0, -1, function (err, result) {
             if(err){
-              error_log.info("fail to get the friendList memory in Redis : " + err);
-              error_log.info("key (req.params.userId) : " + key);
-              error_log.info();
+              console.log("redis err : " + err);
               rejected("fail to get the friendList memory in Redis");
             }
-            else if(result == undefined || result == null){
-              resolved();
-            }
             else {
-              isFriend = true;
+              friendList = result;
+
+              for(var i=0; i<friendList.length; i++){
+                 if(user_1 == friendList[i]){
+                   isFriend = true;
+                   resolved();
+                 }
+              }
               resolved();
             }
         });
@@ -292,25 +378,27 @@ lru.prototype.getCV = function(user_1, user_2) {
   }, function(err){
       console.log(err);
   })
-  .then(function(contentIndexList){
+  .then(function(){
     return new Promise(function(resolved, rejected){
       //친구리스트에 있으면 0
       //없으면 1
       if(isFriend){
         cvValue = 0;
+        cb(cvValue);
+        //return cvValue;
       } else {
         cvValue = 1;
+        cb(cvValue);
+        //return cvValue;
       }
 
     })
   }, function(err){
       console.log(err);
   })
-
-  return cvValue;
 }
 
-lru.prototype.getLRU = function(node) {
+var getLRU = function(node) {
   //return lruValue;
 
   return 0;
