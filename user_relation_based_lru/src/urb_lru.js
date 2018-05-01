@@ -1,6 +1,3 @@
-// var AsyncLock = require('async-lock');
-// var lock = new AsyncLock();
-
 var locks = require('locks');
 var mutex = locks.createMutex();
 
@@ -69,7 +66,8 @@ lru.prototype.get = function(key) {
         this.setHead(node);
         return value;
     } else {
-        console.log("Key " + key + " does not exist in the cache.")
+        return null;
+        //console.log("Key " + key + " does not exist in the cache.")
     }
 };
 
@@ -148,24 +146,18 @@ lru.prototype.setData = function(key, value, user_1, user_2){
   mutex.lock(function () {
     var promise = new Promise(function(resolved, rejected){
         getPriorityValue(user_1, user_2, function(retPriorityValue){
-          //console.log("RET PRIORITY VALUE : " + retPriorityValue);
           var node = new lruInstance.urbNode(key, value, retPriorityValue);
-          //var node = new lru.prototype.urbNode(key, value, retPriorityValue);
           resolved(node);
         });
     });
     promise
     .then(function(node){
       return new Promise(function(resolved, rejected){
-        // console.log("LRU INSTANCE ---------------------------------- : ");
-        // console.log(lruInstance);
         if (lruInstance.map[key]) {
             lruInstance.map[key].value = lruInstance.value;
             lruInstance.remove(node.key);
         } else {
             if (lruInstance.size >= lruInstance.limit) {
-                // console.log("lruInstance.tail!!!!!!!!!!!!!!!!!!!!!!!! : ");
-                // console.log(lruInstance.tail);
                 delete lruInstance.map[lruInstance.tail.key];
                 lruInstance.size--;
                 lruInstance.tail = lruInstance.tail.prev;
@@ -179,7 +171,6 @@ lru.prototype.setData = function(key, value, user_1, user_2){
     })
     .then(function(node){
       return new Promise(function(resolved, rejected){
-        //singleton.setInList(node);
         lruInstance.setInList(node);
         resolved();
       })
@@ -255,7 +246,6 @@ lru.prototype.setInList = function(currNode) {
       if(this.tail == null){
         currNode.prev = this.tail;
         this.tail = currNode;
-
       } else {
         this.tail.next = currNode;
         currNode.prev = this.tail;
@@ -277,7 +267,6 @@ var getPriorityValue = function(user_1, user_2, cb) {
   var promise = new Promise(function(resolved, rejected){
       getCV(user_1, user_2, function(retCV){
         cvValue = retCV;
-        console.log("CV Value : " + cvValue);
         resolved();
       })
   });
@@ -285,7 +274,6 @@ var getPriorityValue = function(user_1, user_2, cb) {
   .then(function(){
     return new Promise(function(resolved, rejected){
       lruValue = getLRU();
-      console.log("LRU Value : " + lruValue);
       resolved();
     })
   }, function(err){
