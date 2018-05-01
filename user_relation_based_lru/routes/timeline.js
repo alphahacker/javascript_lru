@@ -22,7 +22,6 @@ var util = require('../src/util.js');
 var config = require('../src/configs.js');
 var monitoring = require('../src/monitoring.js');
 var coord = require('../src/coord.js');
-var job = require('../src/periodicTask.js')
 
 var app = express();
 
@@ -438,7 +437,7 @@ router.get('/init', function(req, res, next) {
   })
   .then(function(){
     return new Promise(function(resolved, rejected){
-      job.setUserContents();
+      //job.setUserContents();
       resolved();
     })
   }, function(err){
