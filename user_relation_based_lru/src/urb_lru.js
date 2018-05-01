@@ -1,6 +1,12 @@
-var redisPool = require('../src/caching.js');
+// var AsyncLock = require('async-lock');
+// var lock = new AsyncLock();
 
-/* Initialize LRU cache with default limit being 10 items */
+var locks = require('locks');
+var mutex = locks.createMutex();
+
+var redisPool = require('../src/caching.js');
+var lruInstance = {};
+
 var lru = function (limit) {
     this.size = 0;
     (typeof limit == "number") ? this.limit = limit : this.limit = 10;
@@ -9,14 +15,6 @@ var lru = function (limit) {
     this.tail = null;
     this.priorityValue = 0;
 }
-
-// var lru = function (limit) {
-//     this.size = 0;
-//     (typeof limit == "number") ? this.limit = limit : this.limit = 10;
-//     this.map = {};
-//     this.head = null;
-//     this.tail = null;
-// }
 
 lru.prototype.lrunode = function(key, value) {
     if (typeof key != "undefined" && key !== null) {
@@ -134,7 +132,6 @@ lru.prototype.toJSON = function() {
 lru.prototype.toString = function() {
     var s = '';
     var node = this.head;
-    console.log(node);
     while (node) {
         s += String(node.key)+':'+node.value;
         node = node.next;
@@ -145,62 +142,67 @@ lru.prototype.toString = function() {
     return s;
 }
 
-//----------------------------------------------------------------------------//
-
 //set data - completed
 lru.prototype.setData = function(key, value, user_1, user_2){
-
-  var lruInstance = this;
-  var promise = new Promise(function(resolved, rejected){
-      getPriorityValue(user_1, user_2, function(retPriorityValue){
-        console.log("RET PRIORITY VALUE : " + retPriorityValue);
-        var node = new lru.prototype.urbNode(key, value, retPriorityValue);
+  lruInstance = this;
+  mutex.lock(function () {
+    var promise = new Promise(function(resolved, rejected){
+        getPriorityValue(user_1, user_2, function(retPriorityValue){
+          //console.log("RET PRIORITY VALUE : " + retPriorityValue);
+          var node = new lruInstance.urbNode(key, value, retPriorityValue);
+          //var node = new lru.prototype.urbNode(key, value, retPriorityValue);
+          resolved(node);
+        });
+    });
+    promise
+    .then(function(node){
+      return new Promise(function(resolved, rejected){
+        // console.log("LRU INSTANCE ---------------------------------- : ");
+        // console.log(lruInstance);
+        if (lruInstance.map[key]) {
+            lruInstance.map[key].value = lruInstance.value;
+            lruInstance.remove(node.key);
+        } else {
+            if (lruInstance.size >= lruInstance.limit) {
+                // console.log("lruInstance.tail!!!!!!!!!!!!!!!!!!!!!!!! : ");
+                // console.log(lruInstance.tail);
+                delete lruInstance.map[lruInstance.tail.key];
+                lruInstance.size--;
+                lruInstance.tail = lruInstance.tail.prev;
+                lruInstance.tail.next = null;
+            }
+        }
         resolved(node);
-      });
-
+      })
+    }, function(err){
+        console.log(err);
+    })
+    .then(function(node){
+      return new Promise(function(resolved, rejected){
+        //singleton.setInList(node);
+        lruInstance.setInList(node);
+        resolved();
+      })
+    }, function(err){
+        console.log(err);
+    })
+    .then(function(node){
+      return new Promise(function(resolved, rejected){
+        mutex.unlock();
+        resolved();
+      })
+    }, function(err){
+        console.log(err);
+    })
   });
-
-  promise
-  .then(function(node){
-    return new Promise(function(resolved, rejected){
-      // console.log("LRU INSTANCE : ");
-      // console.log(lruInstance);
-
-      if (lruInstance.map[key]) {
-          lruInstance.map[key].value = lruInstance.value;
-          lruInstance.remove(node.key);
-      } else {
-          if (lruInstance.size >= lruInstance.limit) {
-              delete lruInstance.map[lruInstance.tail.key];
-              lruInstance.size--;
-              lruInstance.tail = lruInstance.tail.prev;
-              lruInstance.tail.next = null;
-          }
-      }
-      resolved(node);
-    })
-  }, function(err){
-      console.log(err);
-  })
-  .then(function(node){
-    return new Promise(function(resolved, rejected){
-      lruInstance.setInList(node);
-      //lru.prototype.setInList(node);
-      resolved();
-    })
-  }, function(err){
-      console.log(err);
-  })
 }
 
 lru.prototype.urbNode = function(key, value, paramPriorityValue) {
-
     var nodeInstance = this;
     var promise = new Promise(function(resolved, rejected){
         nodeInstance.priorityValue = paramPriorityValue;
         resolved();
     });
-
     promise
     .then(function(){
       return new Promise(function(resolved, rejected){
@@ -227,12 +229,9 @@ lru.prototype.urbNode = function(key, value, paramPriorityValue) {
 }
 
 lru.prototype.setInList = function(currNode) {
-
   var isCompleted = false; //노드를 리스트에 넣는것을 완성했는지 여부.
-
   if(this.head == null){
     this.head = currNode;
-
   } else {
     var existingNode = this.head;
     while (existingNode) {
@@ -252,7 +251,6 @@ lru.prototype.setInList = function(currNode) {
       }
       existingNode = existingNode.next;
     }
-
     if(!isCompleted){ //아직 못넣었으면, tail에다가 넣어야함.
       if(this.tail == null){
         currNode.prev = this.tail;
@@ -265,39 +263,24 @@ lru.prototype.setInList = function(currNode) {
       }
     }
   }
-
   if(this.tail == null){
     this.tail = currNode;
   }
-
   this.size++;
   this.map[currNode.key] = currNode;
-
-  console.log("What's this : ");
-  console.log(this);
-
 }
-
-
 
 //Closeness value + LRU value의 합인 Priority value 구하기 - completed
 var getPriorityValue = function(user_1, user_2, cb) {
-
   var cvValue;
   var lruValue;
-
   var promise = new Promise(function(resolved, rejected){
-      // if(err){
-      //   rejected();
-      // }
-      //cvValue = getCV(user_1, user_2);
       getCV(user_1, user_2, function(retCV){
         cvValue = retCV;
         console.log("CV Value : " + cvValue);
         resolved();
       })
   });
-
   promise
   .then(function(){
     return new Promise(function(resolved, rejected){
@@ -310,7 +293,6 @@ var getPriorityValue = function(user_1, user_2, cb) {
   })
   .then(function(){
     return new Promise(function(resolved, rejected){
-      //return parseInt(cvValue) + parseInt(lruValue);  //이 return 제대로 되는지 확인 필요
       cb(parseInt(cvValue) + parseInt(lruValue));
       resolved();
     })
@@ -319,9 +301,8 @@ var getPriorityValue = function(user_1, user_2, cb) {
   })
 }
 
-//Closeness value 값 가져오기 - completed
+//Closeness value 값 가져오기
 var getCV = function(user_1, user_2, cb) {
-
   var isFriend = false;
   var cvValue = 1;
   var friendList = [];
@@ -336,7 +317,6 @@ var getCV = function(user_1, user_2, cb) {
         }
         else {
           friendList = result;
-
           for(var i=0; i<friendList.length; i++){
              if(user_2 == friendList[i]){
                isFriend = true;
@@ -345,10 +325,8 @@ var getCV = function(user_1, user_2, cb) {
           }
           resolved();
         }
-
       });
   });
-
   //user_2의 친구리스트에 user_1이 있는지 확인
   promise
   .then(function(){
@@ -363,7 +341,6 @@ var getCV = function(user_1, user_2, cb) {
             }
             else {
               friendList = result;
-
               for(var i=0; i<friendList.length; i++){
                  if(user_1 == friendList[i]){
                    isFriend = true;
@@ -380,18 +357,14 @@ var getCV = function(user_1, user_2, cb) {
   })
   .then(function(){
     return new Promise(function(resolved, rejected){
-      //친구리스트에 있으면 0
-      //없으면 1
+      //친구리스트에 있으면 0, 없으면 1
       if(isFriend){
         cvValue = 0;
         cb(cvValue);
-        //return cvValue;
       } else {
         cvValue = 1;
         cb(cvValue);
-        //return cvValue;
       }
-
     })
   }, function(err){
       console.log(err);
@@ -400,10 +373,7 @@ var getCV = function(user_1, user_2, cb) {
 
 var getLRU = function(node) {
   //return lruValue;
-
   return 0;
 }
-
-
 
 module.exports = lru;
