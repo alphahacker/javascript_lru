@@ -6,7 +6,7 @@ var lruInstance = {};
 
 var lru = function (limit) {
     this.size = 0;
-    (typeof limit == "number") ? this.limit = limit : this.limit = 10;
+    (typeof limit == "number") ? this.limit = limit : this.limit = 2450;
     this.map = {};
     this.head = null;
     this.tail = null;

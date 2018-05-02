@@ -12,8 +12,8 @@ var interim_log = log4js.getLogger("interim");
 
 var dbPool = require('../src/db.js');
 
-var lru = require('../src/urb_lru');
-var urb_lru = new lru(2450);
+var urb_lru = require('../src/urb_lru');
+//var urb_lru = new lru(2450);
 
 var redisPool = require('../src/caching.js');
 var redirect = require('../src/redirector_send.js');

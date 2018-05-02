@@ -4,8 +4,8 @@ var bodyParser = require('body-parser');
 //var redis = require('redis');
 var JSON = require('JSON');
 
-var lru = require('../src/urb_lru');
-var urb_lru = new lru(2450);
+var urb_lru = require('../src/urb_lru');
+//var urb_lru = new lru(2450);
 
 
 //---------------------------------------------------------------------------//
