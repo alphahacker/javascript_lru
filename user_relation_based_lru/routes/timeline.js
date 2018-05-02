@@ -13,7 +13,7 @@ var interim_log = log4js.getLogger("interim");
 var dbPool = require('../src/db.js');
 
 var lru = require('../src/urb_lru');
-var urb_lru = new lru(5);
+var urb_lru = new lru(2450);
 
 var redisPool = require('../src/caching.js');
 var redirect = require('../src/redirector_send.js');
@@ -24,6 +24,142 @@ var monitoring = require('../src/monitoring.js');
 var coord = require('../src/coord.js');
 
 var app = express();
+
+//---------------------------------------------------------------------------//
+
+router.get('/index', function(req, res, next) {
+
+   var urb_lru = new lru(5);
+   var key = "1";
+   var value = "test";
+
+   urb_lru.set(key, value);
+   console.log(urb_lru.get(key));
+
+   res.send("complete");
+});
+
+router.get('/index2', function(req, res, next) {
+
+//   var urb_lru = new lru(5);
+
+   var key = "1";
+   var value = "test";
+   urb_lru.set(key, value);
+
+   key = "2";
+   value = "test2";
+   urb_lru.set(key, value);
+
+   key = "3";
+   value = "test3";
+   urb_lru.set(key, value);
+
+   key = "4";
+   value = "test4";
+   urb_lru.set(key, value);
+
+   key = "5";
+   value = "test5";
+   urb_lru.set(key, value);
+
+   key = "6";
+   value = "test6";
+   urb_lru.set(key, value);
+
+   key = "7";
+   value = "test7";
+   urb_lru.set(key, value);
+
+   key = "8";
+   value = "test8";
+   urb_lru.set(key, value);key = "8";
+
+   res.send("complete");
+});
+
+router.get('/urb_test', function(req, res, next) {
+
+   var key = "1";
+   var value = "test";
+   urb_lru.setData(key, value, "01BlackRose08", "AplisoSA");
+
+   key = "2";
+   value = "test2";
+   urb_lru.setData(key, value, "AplisoSA", "01BlackRose08");
+
+   key = "3";
+   value = "test3";
+   urb_lru.setData(key, value, "AplisoSA", "01BlackRose08");
+
+   key = "4";
+   value = "test4";
+   urb_lru.setData(key, value, "AplisoSA", "01BlackRose08");
+
+   key = "5";
+   value = "test5";
+   urb_lru.setData(key, value, "AplisoSA", "01BlackRose08");
+
+   key = "6";
+   value = "test6";
+   urb_lru.setData(key, value, "AplisoSA", "01BlackRose08");
+
+   key = "7";
+   value = "test7";
+   urb_lru.setData(key, value, "AplisoSA", "AAAAAAAAAAAAA");
+
+   key = "8";
+   value = "test8";
+   urb_lru.setData(key, value, "AplisoSA", "01BlackRose08");
+
+   key = "9";
+   value = "test9";
+   urb_lru.setData(key, value, "AplisoSA", "AAAAAAAAAAAAA");
+
+   key = "10";
+   value = "test10";
+   urb_lru.setData(key, value, "AplisoSA", "AAAAAAAAAAAAA");
+
+   key = "11";
+   value = "test11";
+   urb_lru.setData(key, value, "AplisoSA", "AAAAAAAAAAAAA");
+
+   key = "12";
+   value = "test12";
+   urb_lru.setData(key, value, "AplisoSA", "AAAAAAAAAAAAA");
+
+   key = "13";
+   value = "test13";
+   urb_lru.setData(key, value, "AplisoSA", "AAAAAAAAAAAAA");
+
+   key = "14";
+   value = "test14";
+   urb_lru.setData(key, value, "AplisoSA", "AAAAAAAAAAAAA");
+
+   res.send("complete");
+});
+
+router.get('/urb_test_print', function(req, res, next) {
+
+   console.log(urb_lru.toString());
+
+   res.send("complete");
+});
+
+router.get('/get_test_print', function(req, res, next) {
+
+  console.log(urb_lru.get(1));
+  console.log(urb_lru.get(2));
+
+  res.send("complete");
+});
+
+router.get('/get_test/:key', function(req, res, next) {
+
+  console.log(urb_lru.get(req.params.key));
+
+  res.send("complete");
+});
 
 //---------------------------------------------------------------------------//
 
@@ -558,7 +694,7 @@ router.get('/userId/:userId/numAccess/:numAccess', function(req, res, next) {
           var key = contentIndexList[i];
           var retValue = urb_lru.get(key);
           if(retValue != null){
-            contentDataList.push(result);
+            contentDataList.push(retValue);
             monitoring.cacheHit++;
             getUserContentData(i+1, callback);
           } else {
@@ -957,6 +1093,8 @@ router.post('/:userId', function(req, res, next) {
         } else {
           var key = tweetObjectList[i].contentId;
           var value = tweetObjectList[i].content;
+          // console.log("KEY : " + key);
+          // console.log("VALUE : " + value);
           urb_lru.setData(key, value, "AplisoSA", "01BlackRose08");
           pushTweetInDataMemory(i+1, callback);
         }

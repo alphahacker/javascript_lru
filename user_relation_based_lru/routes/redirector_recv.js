@@ -5,7 +5,7 @@ var bodyParser = require('body-parser');
 var JSON = require('JSON');
 
 var lru = require('../src/urb_lru');
-var urb_lru = new lru(5);
+var urb_lru = new lru(2450);
 
 
 //---------------------------------------------------------------------------//

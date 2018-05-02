@@ -130,8 +130,12 @@ lru.prototype.toJSON = function() {
 lru.prototype.toString = function() {
     var s = '';
     var node = this.head;
+    // console.log("HEAD ---------- : ");
+    // console.log(node);
     while (node) {
         s += String(node.key)+':'+node.value;
+        // console.log("key : " + node.key);
+        // console.log("value : " + node.value);
         node = node.next;
         if (node) {
             s += '\n';
@@ -180,6 +184,8 @@ lru.prototype.setData = function(key, value, user_1, user_2){
     .then(function(node){
       return new Promise(function(resolved, rejected){
         mutex.unlock();
+        // console.log("LRU INSTANCE : ");
+        // console.log(lruInstance);
         resolved();
       })
     }, function(err){
@@ -220,15 +226,15 @@ lru.prototype.urbNode = function(key, value, paramPriorityValue) {
 }
 
 lru.prototype.setInList = function(currNode) {
+
   var isCompleted = false; //노드를 리스트에 넣는것을 완성했는지 여부.
   if(this.head == null){
     this.head = currNode;
   } else {
     var existingNode = this.head;
     while (existingNode) {
-      if(existingNode.priorityValue > currNode.priorityValue){
+      if(currNode.priorityValue < existingNode.priorityValue){
         if(existingNode.prev == null){  // 기존에 있던게, head면
-          currNode.prev = null;
           existingNode.prev = currNode;
           currNode.next = existingNode;
         } else {
