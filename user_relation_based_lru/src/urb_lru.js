@@ -370,4 +370,7 @@ var getLRU = function(node) {
   return 0;
 }
 
-module.exports = lru;
+
+var urb_lru = new lru(2450);
+module.exports = urb_lru;
+//module.exports = lru;
