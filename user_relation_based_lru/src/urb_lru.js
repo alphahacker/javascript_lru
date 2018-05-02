@@ -194,6 +194,56 @@ lru.prototype.setData = function(key, value, user_1, user_2){
   });
 }
 
+/* Retrieve a single entry from the cache */
+lru.prototype.getData = function(key) {
+    lruInstance = this;
+    var value;
+    if (this.map[key]) {
+        mutex.lock(function () {
+          var promise = new Promise(function(resolved, rejected){
+              var user_1 = "AplisoSA";
+              var user_2 = "01BlackRose08";
+              getPriorityValue(user_1, user_2, function(retPriorityValue){
+                value = lruInstance.map[key].value;
+                var node = new lruInstance.urbNode(key, value, retPriorityValue);
+                resolved(node);
+              });
+          });
+          promise
+          .then(function(node){
+            return new Promise(function(resolved, rejected){
+              lruInstance.remove(key);
+              resolved(node);
+            })
+          }, function(err){
+              console.log(err);
+          })
+          .then(function(node){
+            return new Promise(function(resolved, rejected){
+              lruInstance.setInList(node);
+              resolved();
+            })
+          }, function(err){
+              console.log(err);
+          })
+          .then(function(){
+            return new Promise(function(resolved, rejected){
+              mutex.unlock();
+              return value;
+              // console.log("LRU INSTANCE : ");
+              // console.log(lruInstance);
+              resolved();
+            })
+          }, function(err){
+              console.log(err);
+          })
+        });
+    } else {
+        return null;
+        //console.log("Key " + key + " does not exist in the cache.")
+    }
+};
+
 lru.prototype.urbNode = function(key, value, paramPriorityValue) {
     var nodeInstance = this;
     var promise = new Promise(function(resolved, rejected){

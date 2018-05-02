@@ -161,6 +161,13 @@ router.get('/get_test/:key', function(req, res, next) {
   res.send("complete");
 });
 
+router.get('/get_data_test/:key', function(req, res, next) {
+
+  console.log(urb_lru.getData(req.params.key));
+
+  res.send("complete");
+});
+
 //---------------------------------------------------------------------------//
 
 router.get('/init', function(req, res, next) {
