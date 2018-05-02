@@ -175,7 +175,8 @@ lru.prototype.setData = function(key, value, user_1, user_2){
     })
     .then(function(node){
       return new Promise(function(resolved, rejected){
-        lruInstance.setInList(node);
+        //lruInstance.setInList(node);
+        lruInstance.setHead(node);
         resolved();
       })
     }, function(err){
