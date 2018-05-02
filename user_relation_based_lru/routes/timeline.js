@@ -703,7 +703,7 @@ router.get('/userId/:userId/numAccess/:numAccess', function(req, res, next) {
           if(retValue != null){
             contentDataList.push(retValue);
             monitoring.cacheHit++;
-            console.log("hit!");
+            //console.log("hit!");
             getUserContentData(i+1, callback);
           } else {
             dbPool.getConnection(function(err, conn) {
