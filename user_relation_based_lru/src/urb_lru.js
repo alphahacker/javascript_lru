@@ -220,7 +220,7 @@ lru.prototype.getData = function(key) {
           })
           .then(function(node){
             return new Promise(function(resolved, rejected){
-              lruInstance.setInList(node);
+              lruInstance.setHead(node);
               resolved();
             })
           }, function(err){
