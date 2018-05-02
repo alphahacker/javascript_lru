@@ -421,6 +421,6 @@ var getLRU = function(node) {
 }
 
 
-var urb_lru = new lru(2450);
+var urb_lru = new lru(24000);
 module.exports = urb_lru;
 //module.exports = lru;
