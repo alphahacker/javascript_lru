@@ -62,7 +62,7 @@ router.post('/', function(req, res, next) {
         } else {
           var key = tweetObjectList[i].userId;
           var value = tweetObjectList[i].contentId;
-          redisPool.indexMemory.rpush(key, value, function (err) {
+          redisPool.indexMemory.lpush(key, value, function (err) {
               if(err){
                 error_log.debug("fail to push the content into friend's index memory in Redis" + err + "\n");
                 rejected("fail to push the content into friend's index memory in Redis");
@@ -149,7 +149,7 @@ router.get('/ip/:userId', function(req, res, next) {
     			else {
     				//3-b. 없으면 디비에 가져와서 캐쉬에 올리고 리턴
     				var value = JSON.stringify(rows[0]);
-    				redisPool.indexMemory.set(key, value, function (err) {
+    				redisPool.indexMemory.lpush(key, value, function (err) {
     					console.log(value);
     					res.json(value);
               conn.release();
